@@ -478,6 +478,11 @@ class InventoryImporter(object):
     def _store_gsuite_membership_post(self):
         """Flush storing gsuite memberships."""
 
+        item_counter = 0
+        membership_items_count = (
+            len(self.membership_items) if self.membership_items else 0)
+        rows_per_flush = 1000
+
         if not self.member_cache:
             return
 
@@ -491,9 +496,13 @@ class InventoryImporter(object):
                     stmt = self.dao.TBL_MEMBERSHIP.insert(item)
                     self.session.execute(stmt)
             else:
-                stmt = self.dao.TBL_MEMBERSHIP.insert(
-                    self.membership_items)
-                self.session.execute(stmt)
+                LOGGER.debug(f'Storing {membership_items_count} G Suite '
+                             f'membership rows.')
+                while item_counter < membership_items_count:
+                    stmt = self.dao.TBL_MEMBERSHIP.insert(
+                        self.membership_items[item_counter:rows_per_flush])
+                    self.session.execute(stmt)
+                    item_counter += rows_per_flush
 
     def _store_gsuite_membership(self, child, parent):
         """Store a gsuite principal such as a group, user or member.
