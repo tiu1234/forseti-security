@@ -539,6 +539,10 @@ class InventoryImporter(object):
             self.session.add(self.member_cache[member])
 
         parent_group = group_name(parent)
+        if not parent_group:
+            LOGGER.debug(f'G Suite member {member} does not have a parent '
+                         f'group. Parent: {parent}')
+            return
 
         if parent_group not in self.membership_map:
             self.membership_map[parent_group] = set()
@@ -546,7 +550,7 @@ class InventoryImporter(object):
         if member not in self.membership_map[parent_group]:
             self.membership_map[parent_group].add(member)
             self.membership_items.append(
-                dict(group_name=group_name(parent), members_name=member))
+                dict(group_name=parent_group, members_name=member))
 
     def _store_groups_settings(self, settings):
         """Store gsuite settings.
